@@ -65,6 +65,7 @@ npm run dev
 Run backend only:
 
 ```bash
+cd server
 npm run server
 ```
 
