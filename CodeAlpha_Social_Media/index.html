@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseBoard Social</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">PB</div>
+        <div>
+          <h1>PulseBoard</h1>
+          <p class="muted">Mini social app</p>
+        </div>
+      </div>
+
+      <div class="current-user">
+        <label class="label" for="currentUser">Posting as</label>
+        <select class="select" id="currentUser"></select>
+      </div>
+
+      <nav class="nav-actions" aria-label="Main navigation">
+        <button class="button ghost full" id="feedViewButton" type="button">Feed</button>
+        <button class="button ghost full" id="myProfileButton" type="button">My Profile</button>
+      </nav>
+
+      <form class="create-user" id="createUserForm">
+        <h2 class="section-title">Create Profile</h2>
+        <div class="form-stack">
+          <input class="input" id="newName" name="name" placeholder="Full name" required>
+          <input class="input" id="newUsername" name="username" placeholder="Username" required>
+          <textarea class="textarea" id="newBio" name="bio" placeholder="Bio"></textarea>
+          <button class="button" type="submit">Create</button>
+        </div>
+      </form>
+    </aside>
+
+    <main class="main">
+      <section class="profile-card" id="profileCard"></section>
+
+      <section class="composer" id="composer">
+        <div class="composer-header">
+          <div class="avatar" id="composerAvatar">PB</div>
+          <textarea class="textarea" id="postContent" maxlength="280" placeholder="Share something with your network"></textarea>
+        </div>
+        <div class="composer-actions">
+          <span class="muted" id="postHint">0 / 280</span>
+          <button class="button" id="postButton" type="button">Post</button>
+        </div>
+      </section>
+
+      <section class="content-header" id="contentHeader"></section>
+      <section class="feed" id="feed"></section>
+    </main>
+
+    <aside class="people-panel">
+      <h2 class="section-title">People</h2>
+      <div class="people-list" id="peopleList"></div>
+    </aside>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
