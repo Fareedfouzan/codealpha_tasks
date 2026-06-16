@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - Shopify</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <h1>Shopify</h1>
+            <div class="user-menu"></div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="cart.html">Cart</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Shopping Cart</h2>
+            
+            <div class="grid-2">
+                <div>
+                    <div id="cart-items-container">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading cart...</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="cart-summary">
+                        <h3>Order Summary</h3>
+                        <div style="margin: 1rem 0; padding: 1rem 0; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Subtotal:</span>
+                                <span id="subtotal">$0.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Shipping:</span>
+                                <span id="shipping">$0.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 1.3rem; font-weight: bold; margin-top: 1rem;">
+                                <span>Total:</span>
+                                <span id="total">$0.00</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;" onclick="goToCheckout()">Proceed to Checkout</button>
+                        <button class="btn" style="width: 100%; margin-top: 0.5rem;" onclick="continueShopping()">Continue Shopping</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 E-Shop. All rights reserved.</p>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        let cartItems = [];
+
+        async function loadCart() {
+            if (!api.getToken()) {
+                document.getElementById('cart-items-container').innerHTML = `
+                    <div class="info-message">
+                        Please <a href="login.html">login</a> to view your cart.
+                    </div>
+                `;
+                return;
+            }
+
+            const result = await api.getCartItems();
+            if (!result.success) {
+                document.getElementById('cart-items-container').innerHTML = `
+                    <div class="error-message">${result.error}</div>
+                `;
+                return;
+            }
+
+            cartItems = result.data;
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            
+            if (cartItems.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Your cart is empty</h3>
+                        <p><a href="products.html">Continue shopping</a></p>
+                    </div>
+                `;
+                document.querySelector('.btn-primary').disabled = true;
+                updateSummary();
+                return;
+            }
+
+            container.innerHTML = cartItems.map(item => `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <div class="cart-item-name">${item.product.name}</div>
+                        <div class="cart-item-price">${formatPrice(item.product.price)} each</div>
+                    </div>
+                    <div class="cart-item-controls">
+                        <input type="number" min="1" value="${item.quantity}" class="qty-input" onchange="updateQuantity(${item.product.id}, this.value)">
+                        <span>${formatPrice(item.product.price * item.quantity)}</span>
+                        <button class="btn btn-danger btn-small" onclick="removeItem(${item.product.id})">Remove</button>
+                    </div>
+                </div>
+            `).join('');
+
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const subtotal = cartItems.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+            const shipping = subtotal > 0 ? 10 : 0;
+            const total = subtotal + shipping;
+
+            document.getElementById('subtotal').textContent = formatPrice(subtotal);
+            document.getElementById('shipping').textContent = formatPrice(shipping);
+            document.getElementById('total').textContent = formatPrice(total);
+        }
+
+        async function updateQuantity(productId, newQuantity) {
+            newQuantity = parseInt(newQuantity);
+            if (newQuantity < 1) {
+                removeItem(productId);
+                return;
+            }
+
+            const result = await api.updateCartItem(productId, newQuantity);
+            if (result.success) {
+                loadCart();
+            } else {
+                showMessage(result.error, 'error');
+            }
+        }
+
+        async function removeItem(productId) {
+            const result = await api.removeFromCart(productId);
+            if (result.success) {
+                showMessage('Item removed from cart', 'success');
+                loadCart();
+                updateCartCount();
+            } else {
+                showMessage(result.error, 'error');
+            }
+        }
+
+        function goToCheckout() {
+            if (cartItems.length === 0) {
+                showMessage('Your cart is empty', 'error');
+                return;
+            }
+            window.location.href = 'checkout.html';
+        }
+
+        function continueShopping() {
+            window.location.href = 'products.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', loadCart);
+    </script>
+</body>
+</html>

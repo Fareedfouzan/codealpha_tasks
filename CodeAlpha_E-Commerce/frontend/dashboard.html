@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - Shopify</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <h1>Shopify</h1>
+            <div class="user-menu"></div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="cart.html">Cart</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>My Orders</h2>
+            
+            <div id="orders-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading orders...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 E-Shop. All rights reserved.</p>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        async function loadOrders() {
+            if (!api.getToken()) {
+                document.getElementById('orders-container').innerHTML = `
+                    <div class="info-message">
+                        Please <a href="login.html">login</a> to view your orders.
+                    </div>
+                `;
+                return;
+            }
+
+            const result = await api.getOrders();
+            if (!result.success) {
+                document.getElementById('orders-container').innerHTML = `
+                    <div class="error-message">${result.error}</div>
+                `;
+                return;
+            }
+
+            const orders = result.data.results || result.data;
+            if (!orders || orders.length === 0) {
+                document.getElementById('orders-container').innerHTML = `
+                    <div class="empty-state">
+                        <h3>No orders yet</h3>
+                        <p><a href="products.html">Start shopping</a></p>
+                    </div>
+                `;
+                return;
+            }
+
+            const ordersHtml = orders.map(order => `
+                <div class="order-card">
+                    <div class="order-content">
+                        <h3>Order #${order.id}</h3>
+                        <div style="margin: 1rem 0; color: #666;">
+                            <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString()}</p>
+                            <p><strong>Status:</strong> <span style="text-transform: capitalize; padding: 0.25rem 0.5rem; background: ${getStatusColor(order.status)}; border-radius: 3px; color: white;">${order.status}</span></p>
+                            <p><strong>Items:</strong> ${order.items.length}</p>
+                        </div>
+                        <div style="margin: 1rem 0; padding: 1rem 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
+                            ${order.items.map(item => `
+                                <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; font-size: 0.9rem;">
+                                    <span>${item.product.name} (x${item.quantity})</span>
+                                    <span>${formatPrice(item.product.price * item.quantity)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold; margin: 1rem 0;">
+                            <span>Total:</span>
+                            <span>${formatPrice(order.total_amount)}</span>
+                        </div>
+                        <div style="margin-top: 1rem;">
+                            <button class="btn btn-small" onclick="viewOrder(${order.id})">View Details</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('orders-container').innerHTML = ordersHtml;
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'pending': '#f39c12',
+                'processing': '#3498db',
+                'shipped': '#9b59b6',
+                'delivered': '#27ae60',
+                'cancelled': '#e74c3c'
+            };
+            return colors[status] || '#95a5a6';
+        }
+
+        function viewOrder(orderId) {
+            window.location.href = `order-confirmation.html?id=${orderId}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', loadOrders);
+    </script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Details - Shopify</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .product-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .product-image {
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #ecf0f1;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .product-info h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .product-price-large {
+            font-size: 1.8rem;
+            color: #27ae60;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .product-stock {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: #ecf0f1;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            font-weight: bold;
+        }
+
+        .product-stock.in-stock {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .product-stock.out-of-stock {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .product-description-full {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 1.5rem;
+        }
+
+        .quantity-selector {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .quantity-selector input {
+            width: 60px;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .quantity-selector button {
+            padding: 0.5rem 1rem;
+            background-color: #34495e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .quantity-selector button:hover {
+            background-color: #2c3e50;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn-add-cart {
+            flex: 1;
+            padding: 1rem;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-add-cart:hover {
+            background-color: #229954;
+        }
+
+        .btn-add-cart:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .product-category {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-bottom: 1rem;
+            padding: 0.5rem 1rem;
+            background-color: #34495e;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .back-button:hover {
+            background-color: #2c3e50;
+        }
+
+        @media (max-width: 768px) {
+            .product-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <h1>Shopify</h1>
+            <div class="user-menu"></div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="cart.html">Cart</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <a href="products.html" class="back-button">← Back to Products</a>
+        
+        <div id="product-container">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading product details...</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 E-Shop. All rights reserved.</p>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        async function loadProductDetails() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const productId = urlParams.get('id');
+
+                if (!productId) {
+                    document.getElementById('product-container').innerHTML = '<div class="error-message"><h3>Product not found</h3></div>';
+                    return;
+                }
+
+                const result = await api.getProduct(productId);
+                const container = document.getElementById('product-container');
+
+                if (!result.success) {
+                    container.innerHTML = `<div class="error-message"><h3>Error Loading Product</h3><p>${result.error}</p></div>`;
+                    return;
+                }
+
+                const product = result.data;
+                const imageUrl = product.image_url || 'https://via.placeholder.com/400?text=No+Image';
+                const categoryName = product.category ? product.category.name : 'Uncategorized';
+
+                container.innerHTML = `
+                    <div class="product-details">
+                        <div class="product-image">
+                            <img src="${imageUrl}" alt="${product.name}">
+                        </div>
+                        <div class="product-info">
+                            <p class="product-category">Category: ${categoryName}</p>
+                            <h2>${product.name}</h2>
+                            <div class="product-price-large">${formatPrice(product.price)}</div>
+                            <div class="product-stock ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}">
+                                ${product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
+                            </div>
+                            <p class="product-description-full">${product.description}</p>
+                            
+                            <div class="quantity-selector">
+                                <label for="quantity">Quantity:</label>
+                                <input type="number" id="quantity" min="1" max="${product.stock}" value="1">
+                                <button onclick="addToCartWithQuantity(${product.id})">Add to Cart</button>
+                            </div>
+
+                            <div class="action-buttons">
+                                <button class="btn-add-cart" onclick="quickAddToCart(${product.id})" ${product.stock === 0 ? 'disabled' : ''}>
+                                    ${product.stock > 0 ? 'Quick Add to Cart' : 'Out of Stock'}
+                                </button>
+                            </div>
+
+                            <p style="font-size: 0.9rem; color: #7f8c8d;">
+                                <strong>Product ID:</strong> ${product.id}
+                            </p>
+                        </div>
+                    </div>
+                `;
+
+                document.title = `${product.name} - E-Shop`;
+            } catch (error) {
+                console.error('Error loading product:', error);
+                document.getElementById('product-container').innerHTML = `<div class="error-message"><h3>Error Loading Product</h3><p>${error.message}</p></div>`;
+            }
+        }
+
+        function quickAddToCart(productId) {
+            addProductToCart(productId, 1);
+        }
+
+        function addToCartWithQuantity(productId) {
+            const quantity = parseInt(document.getElementById('quantity').value) || 1;
+            addProductToCart(productId, quantity);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProductDetails();
+        });
+    </script>
+</body>
+</html>

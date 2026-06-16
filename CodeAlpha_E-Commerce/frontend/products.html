@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - Shopify</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="header-top">
+            <h1>Shopify</h1>
+            <div class="user-menu"></div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="cart.html">Cart</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Products</h2>
+            
+            <div class="filter-section">
+                <h3>Filter Products</h3>
+                <div class="filter-group">
+                    <input type="text" id="search-input" placeholder="Search products..." style="flex: 1;">
+                    <select id="category-select">
+                        <option value="">All Categories</option>
+                    </select>
+                    <button class="btn" onclick="applyFilters()">Search</button>
+                </div>
+            </div>
+
+            <div id="products-container" class="product-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading products...</p>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+                <button class="btn" id="prev-btn" onclick="previousPage()" style="display: none;">Previous</button>
+                <span id="page-info"></span>
+                <button class="btn" id="next-btn" onclick="nextPage()" style="display: none;">Next</button>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 E-Shop. All rights reserved.</p>
+    </footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        let currentPage = 1;
+        let currentSearch = '';
+        let currentCategory = '';
+
+        async function loadProducts() {
+            try {
+                const result = await api.getProducts(currentPage, currentSearch, currentCategory);
+                const container = document.getElementById('products-container');
+
+                if (!result.success) {
+                    container.innerHTML = `<div class="error-message"><h3>Error Loading Products</h3><p>${result.error}</p></div>`;
+                    return;
+                }
+
+                const products = result.data.results;
+                if (products.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><h3>No products found</h3></div>';
+                    document.getElementById('prev-btn').style.display = 'none';
+                    document.getElementById('next-btn').style.display = 'none';
+                    return;
+                }
+
+                container.innerHTML = '';
+                products.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = 'product-item';
+                    const imageUrl = p.image_url || 'https://via.placeholder.com/200?text=No+Image';
+                    div.innerHTML = `
+                        <img src="${imageUrl}" alt="${p.name}" style="width: 100%; height: 200px; object-fit: cover; display: block; background-color: #ecf0f1;">
+                        <div class="product-item-content">
+                            <h3>${p.name}</h3>
+                            <p class="product-price">${formatPrice(p.price)}</p>
+                            <p class="product-description">${p.description.substring(0, 60)}...</p>
+                            <div class="stock-status ${p.stock > 0 ? 'in-stock' : 'out-of-stock'}">
+                                ${p.stock > 0 ? `${p.stock} in stock` : 'Out of stock'}
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-small btn-primary" onclick="goToProduct(${p.id})">View Details</button>
+                                <button class="btn btn-small" onclick="addProductToCart(${p.id})" ${p.stock === 0 ? 'disabled' : ''}>Add to Cart</button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+
+                // Update pagination
+                document.getElementById('page-info').textContent = `Page ${currentPage}`;
+                document.getElementById('prev-btn').style.display = currentPage > 1 ? 'block' : 'none';
+                document.getElementById('next-btn').style.display = result.data.next ? 'block' : 'none';
+            } catch (error) {
+                console.error('Error loading products:', error);
+                document.getElementById('products-container').innerHTML = `<div class="error-message"><h3>Error Loading Products</h3><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function loadCategories() {
+            try {
+                const result = await api.getCategories();
+                if (result.success) {
+                    const select = document.getElementById('category-select');
+                    result.data.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.id;
+                        option.textContent = cat.name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        function applyFilters() {
+            currentPage = 1;
+            currentSearch = document.getElementById('search-input').value;
+            currentCategory = document.getElementById('category-select').value;
+            loadProducts();
+        }
+
+        function nextPage() {
+            currentPage++;
+            loadProducts();
+            window.scrollTo(0, 0);
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadProducts();
+                window.scrollTo(0, 0);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCategories();
+            loadProducts();
+        });
+
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                applyFilters();
+            }
+        });
+    </script>
+</body>
+</html>
